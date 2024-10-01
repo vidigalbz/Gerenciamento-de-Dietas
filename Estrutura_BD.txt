@@ -1,0 +1,8 @@
+dim_usuario =  ID, nome, email, cpf, fk_tipo (nutrólogo ou paciente)
+fato_tipo =  ID, tipo
+
+dim_dieta = ID, nome, calorias totais, cpf_usuario
+
+dim_refeicao = ID, nome, horario, id_dieta
+
+dim_refeicaoalimento = id_refeicao, id_alimento, quantidade

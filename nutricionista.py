@@ -104,13 +104,13 @@ class Nutricionisa(Tk):
         self.combobox_pesquisa.set("Filtro")
         self.combobox_pesquisa.grid(column=0, row=0)
 
-        self.button_cadastrar = Button(self, text="Cadastrar", bg="white", command=self.cadastrar_dieta, width=10)
-        self.button_cadastrar.place(x=1047, y=72)
+        self.button_cadastrar = Button(self, text="Cadastrar", bg="white", command=self.cadastrar_dieta, width=12)
+        self.button_cadastrar.place(x=1035, y=72)
 
-        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=None)
+        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=lambda: [self.editar_item_dietas()])
         self.button_editar.place(x=965, y=667)
 
-        self.button_remover = Button(self, text="Remover", bg="white", width=10, command=None)
+        self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: (self.remover_item(self.tree_dietas,  "dim_dieta", "id_dieta", 0)))
         self.button_remover.place(x=1047, y=667)
 
         self.tree_dietas = ttk.Treeview(self, columns=("ID", "Nome", "CPF do Paciente", "Refeições", "Calorias Diarias"), show="headings", height=22)
@@ -121,8 +121,13 @@ class Nutricionisa(Tk):
 
         for i in [("ID", 175), ("Nome", 175), ("CPF do Paciente", 175), ("Refeições", 175), ("Calorias Diarias", 175)]:
             self.tree_dietas.column(i[0], width=i[1], anchor="center")
+        
+        scrollbar = Scrollbar(self, orient=VERTICAL, command=self.tree_dietas.yview)
+        scrollbar.place(x=1126, y=200, height=465)
 
-        self.info_dieta()
+        self.tree_dietas.configure(yscrollcommand=scrollbar.set)
+
+        self.info_treeview(self.tree_dietas, "dim_dieta", None, None)
 
     def alimentos(self):
         self.clear()
@@ -140,58 +145,136 @@ class Nutricionisa(Tk):
 
     ##BACK-END
     def cadastrar_dieta(self):
-        resultado = self.abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
-        if not self.entry_cpfpaciente.get().isnumeric():
-            showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
-        
-        elif not self.entry_refeicoes.get().isnumeric():
-            showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
-        
-        elif not self.entry_caloriasdiarias.get().isnumeric():
-            showerror("ERRO",  "Insira apenas números no campo 'Calorias Diarias'")
-
-        elif len(self.entry_cpfpaciente.get()) > 11:
-            showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
-        
-        elif resultado:
-            showerror("ERRO", "Já existe uma dieta com este cpf")
-
-        else:
-            self.inserir_dieta_bd()
-
-            for item in self.tree_dietas.get_children():
-                self.tree_dietas.delete(item)
+            print(self.button_cadastrar.cget("text"))
+            resultado = self.abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
             
-            self.info_dieta()
+            if [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()] == "":
+                showerror("ERRO", "Preencha todos os campos para fazer cadastro")
+                return
+                
+            elif not self.entry_cpfpaciente.get().isnumeric():
+                showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
+                return
+            
+            elif not self.entry_refeicoes.get().isnumeric():
+                showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
+                return
+            
+            elif not self.entry_caloriasdiarias.get().isnumeric():
+                showerror("ERRO",  "Insira apenas números no campo 'Calorias Diarias'")
+                return
 
-    def info_dieta(self):
-        resultado = self.abrir_bd_fetchall("dim_dieta")
+            elif len(self.entry_cpfpaciente.get()) > 11:
+                showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
+                return
+
+
+            if self.button_cadastrar.cget("text") == "Cadastrar":                
+                if resultado:
+                    showerror("ERRO", "Já existe uma dieta com este cpf")
+
+                else:    
+                    self.inserir_dieta_bd()
+
+                    for item in self.tree_dietas.get_children():
+                        self.tree_dietas.delete(item)
+                
+                    self.info_treeview(self.tree_dietas, "dim_dieta", None, None)
+        
+            elif self.button_cadastrar.cget("text") == "Finalizar Edição":
+                id_dieta = self.tree_dietas.item(self.selected_item, "values")[0]
+                print(id_dieta)
+                
+                for coluna, valor in [("nome", self.entry_nome.get()), 
+                                      ("cpf_paciente", self.entry_cpfpaciente.get()), 
+                                      ("refeicoes", self.entry_refeicoes.get()), 
+                                      ("calorias_diarias", self.entry_caloriasdiarias.get())]:
+                    
+                    self.atualizar_dieta_bd(coluna, valor, id_dieta)
+                self.conexao.commit()
+            
+            self.button_cadastrar.config(text="Cadastrar")
+
+    def info_treeview(self, tree, tabela, coluna, valor):
+        resultado = self.abrir_bd_fetchall(tabela, coluna, valor)
         for i in resultado:
-            self.tree_dietas.insert("", "end", values=(i[0], i[1], i[2], i[3], i[4]))
+            tree.insert("", "end", values=(i[0], i[1], i[2], i[3], i[4]))
     
-    def remover_dieta():
-        pass
+    def pesquisar(self):
+        valor = self.combobox_pesquisa.get()
+        if valor == "Filtro" or valor == "":
+            resultado = self.abrir_bd_fetchall("dim_dieta" "")
     
-    ##MYSQL
-    def update_id(self):
-        comando = """SET @count = 0;
-                    UPDATE dim_dieta SET id_dieta = @count:= @count + 1;
-                    ALTER TABLE tablename AUTO_INCREMENT = (SELECT MAX(id) FROM tabela) + 1"""
-        self.cursor.execute(comando)
+    def remover_item(self, tree, tabela, coluna, index_info):
+        selected_item = tree.selection()
+        
+        if not selected_item:
+            showerror("ERRO", "Selecione um produto para usar esta função")
+        
+        else:
+            yesno = askyesno("Confirmação", "Voce realmente deseja remover este(s) item?")
+        
+            if yesno:
+                for i in selected_item:
+                    valor = tree.item(i, "values")[index_info]
+                    
+                    self.delete_bd(tabela, coluna, valor) 
+                    tree.delete(i)
 
+    def editar_item_dietas(self):
+        self.selected_item = self.tree_dietas.selection()
+
+        if not self.selected_item:
+            showerror("ERRO", "Selecione um produto para usar esta função")
+        
+        elif len(self.selected_item) > 1:
+            showerror("ERRO", "Não é possivel editar mais de um item de uma vez")
+        
+        else:
+            self.button_cadastrar.config(text="Finalizar Edição")
+            info = []
+
+            for i in range(1, 5):
+                infos = self.tree_dietas.item(self.selected_item, "values")[i]
+                info.append(infos)
+
+            for entry, new_info in [(self.entry_nome, info[0]), 
+                                    (self.entry_cpfpaciente, info[1]),
+                                    (self.entry_refeicoes, info[2]),
+                                    (self.entry_caloriasdiarias, info[3])]:
+                            
+                entry.delete(0, END)
+                entry.insert(0, new_info)
+                entry.configure(fg="black")
+                
+    ##MYSQL
     def inserir_dieta_bd(self):
         self.cursor.execute("INSERT INTO dim_dieta(nome, cpf_paciente, refeicoes, calorias_totais) VALUES(%s, %s, %s, %s)", (self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()))
         self.conexao.commit()
     
-    def abrir_bd_fetchall(self, table):
-        self.cursor.execute("SELECT * FROM "+ table)
-        resultado = self.cursor.fetchall()
-        return resultado
-    
+    def atualizar_dieta_bd(self, coluna, valor_coluna, valor_id):
+        self.cursor.execute("UPDATE dim_dieta SET " + coluna + "=%s WHERE id_dieta =%s", (valor_coluna, valor_id))
+        self.conexao.commit()
+
+    def abrir_bd_fetchall(self, table, coluna, valor):
+        if coluna == None:    
+            self.cursor.execute("SELECT * FROM "+ table)
+            resultado = self.cursor.fetchall()
+            return resultado
+        
+        else:
+            self.cursor.execute("SELECT * FROM " + table +" WHERE " + coluna +"= %s", (valor,))
+            resultado = self.cursor.fetchall()
+            return resultado
+            
     def abrir_bd_fetchone(self, table, coluna, valor):
         self.cursor.execute("SELECT * FROM "+ table + " WHERE " + coluna + "= %s", (valor, ))
         resultado = self.cursor.fetchone()
         return resultado
+    
+    def delete_bd(self, tabela, coluna, valor):
+        self.cursor.execute("DELETE FROM " + tabela + " WHERE "+ coluna +"= %s", (valor, ))
+        self.conexao.commit()
     
 if __name__ == "__main__":
     app = Nutricionisa()

@@ -18,7 +18,7 @@ class Nutricionisa(Tk):
     ##FRONT-END
     def start(self):
         self.clear()
-        self.title("Dashboard")
+        self.title("NutryApp")
         self.geometry("1180x720")
         self.dashboard()
     
@@ -95,8 +95,6 @@ class Nutricionisa(Tk):
         self.entry_pesquisa.insert(0, "Pesquisar:")
         self.entry_pesquisa.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_pesquisa, "Pesquisar:", "black"))
         self.entry_pesquisa.bind("<FocusOut>", lambda event: self.Infocus_entry(self.entry_pesquisa, "Pesquisar:", "black"))
-        self.button_pesquisa = Button(self.frame_pesquisa, text="🔎", command=self.pesquisar)
-        self.button_pesquisa.grid(column=2, row=0)
 
         filtro = ["ID", "Nome", "CPF", "Refeições", "Calorias Diárias", "Todos"]
         self.combobox_pesquisa = ttk.Combobox(self.frame_pesquisa, values=filtro, )
@@ -107,7 +105,7 @@ class Nutricionisa(Tk):
         self.button_cadastrar = Button(self, text="Cadastrar", bg="white", command=self.cadastrar_dieta, width=12)
         self.button_cadastrar.place(x=1035, y=72)
 
-        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=lambda: [self.editar_item_dietas()])
+        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=lambda: [self.editar_item(self.tree_dietas, self.button_cadastrar, [self.entry_nome, self.entry_cpfpaciente, self.entry_refeicoes, self.entry_caloriasdiarias])])
         self.button_editar.place(x=965, y=667)
 
         self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: (self.remover_item(self.tree_dietas,  "dim_dieta", "id_dieta", 0)))
@@ -124,6 +122,9 @@ class Nutricionisa(Tk):
         
         scrollbar = Scrollbar(self, orient=VERTICAL, command=self.tree_dietas.yview)
         scrollbar.place(x=1126, y=200, height=465)
+
+        self.button_pesquisa = Button(self.frame_pesquisa, text="🔎", command=lambda: [self.pesquisar_item(self.tree_dietas, [("ID", "id_dieta"), ("Nome", "nome"), ("CPF", "cpf_paciente"), ("Refeições", "refeicoes"), ("Calorias Diárias", "calorias_diarias")], self.pesquisar_tudo_dietas)])
+        self.button_pesquisa.grid(column=2, row=0)
 
         self.tree_dietas.configure(yscrollcommand=scrollbar.set)
 
@@ -178,8 +179,6 @@ class Nutricionisa(Tk):
         self.entry_pesquisa.insert(0, "Pesquisar:")
         self.entry_pesquisa.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_pesquisa, "Pesquisar:", "black"))
         self.entry_pesquisa.bind("<FocusOut>", lambda event: self.Infocus_entry(self.entry_pesquisa, "Pesquisar:", "black"))
-        self.button_pesquisa = Button(self.frame_pesquisa, text="🔎", command=self.pesquisar)
-        self.button_pesquisa.grid(column=2, row=0)
 
         filtro = ["ID", "Nome", "Calorias", "Proteínas", "Carboidratos", "Gorduras", "Todos"]
         self.combobox_pesquisa = ttk.Combobox(self.frame_pesquisa, values=filtro, )
@@ -187,7 +186,7 @@ class Nutricionisa(Tk):
         self.combobox_pesquisa.grid(column=0, row=0)
         self.combobox_pesquisa.config(state="readonly")
 
-        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=lambda: [self.editar_item_dietas()])
+        self.button_editar = Button(self, text="Editar", bg="white", width=10, command=lambda: [self.editar_item(self.tree_alimentos, self.button_cadastrar, [self.entry_nome, self.entry_caloria, self.entry_proteina, self.entry_carboidrato, self.entry_gordura])])
         self.button_editar.place(x=965, y=667)
 
         self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: (self.remover_item(self.tree_alimentos,  "dim_alimento", "id_alimento", 0)))
@@ -201,6 +200,9 @@ class Nutricionisa(Tk):
 
         for i in [("ID", 146), ("Nome", 146), ("Calorias", 146), ("Proteínas", 146), ("Carboidratos", 146), ("Gorduras", 146)]:
             self.tree_alimentos.column(i[0], width=i[1], anchor="center")
+        
+        self.button_pesquisa = Button(self.frame_pesquisa, text="🔎", command=lambda: [self.pesquisar_item(self.tree_alimentos, [("ID", "id_alimento"), ("Nome", "nome"), ("Calorias", "caloria"), ("Proteínas", "proteina"), ("Carboidratos", "carboidrato"), ("Gorduras", "gordura")], None)])
+        self.button_pesquisa.grid(column=2, row=0)
         
         scrollbar = Scrollbar(self, orient=VERTICAL, command=self.tree_alimentos.yview)
         scrollbar.place(x=1126, y=200, height=465)
@@ -219,67 +221,12 @@ class Nutricionisa(Tk):
     ##BACK-END
     def info_treeview(self, tree, tabela, coluna, valor):
         resultado = self.abrir_bd_fetchall(tabela, coluna, valor)
+        colunas = tree["columns"]
+
         for i in resultado:
-            tree.insert("", "end", values=(i[0], i[1], i[2], i[3], i[4]))
-
-    def cadastrar_dieta(self):
-            resultado = self.abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
-            
-            if [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()] == "":
-                showerror("ERRO", "Preencha todos os campos para fazer cadastro")
-                return
-                
-            elif not self.entry_cpfpaciente.get().isnumeric():
-                showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
-                return
-            
-            elif not self.entry_refeicoes.get().isnumeric():
-                showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
-                return
-            
-            elif not self.entry_caloriasdiarias.get().isnumeric():
-                showerror("ERRO",  "Insira apenas números no campo 'Calorias Diárias'")
-                return
-
-            elif len(self.entry_cpfpaciente.get()) > 11 or len(self.entry_cpfpaciente.get()) < 11:
-                showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
-                return
-
-            try:
-                float(self.entry_caloriasdiarias.get())
-
-            except ValueError:
-                showerror("ERRO", "Insira apenas números no campo 'Calorias Diárias'")
-
-
-            if self.button_cadastrar.cget("text") == "Cadastrar":                
-                if resultado:
-                    showerror("ERRO", "Já existe uma dieta com este cpf")
-
-                else:    
-                    self.inserir_dieta_bd()
-
         
-            elif self.button_cadastrar.cget("text") == "Finalizar Edição":
-                id_dieta = self.tree_dietas.item(self.selected_item, "values")[0]
-                
-                for coluna, valor in [("nome", self.entry_nome.get()), 
-                                      ("cpf_paciente", self.entry_cpfpaciente.get()), 
-                                      ("refeicoes", self.entry_refeicoes.get()), 
-                                      ("calorias_diarias", self.entry_caloriasdiarias.get())]:
-                    
-                    self.atualizar_dieta_bd(coluna, valor, id_dieta)
-                self.conexao.commit()
-            
-            else:
-                showerror("ERRO", "Reinicie o aplicativo")
-
-            for item in self.tree_dietas.get_children():
-                        self.tree_dietas.delete(item)
-                
-            self.info_treeview(self.tree_dietas, "dim_dieta", None, None)
-            
-            self.button_cadastrar.config(text="Cadastrar")
+            valores = i[:len(colunas)]
+            tree.insert("", "end", values=valores)
 
     def remover_item(self, tree, tabela, coluna, index_info):
         selected_item = tree.selection()
@@ -296,38 +243,9 @@ class Nutricionisa(Tk):
                     
                     self.delete_bd(tabela, coluna, valor) 
                     tree.delete(i)
-    
-    def pesquisar(self):
-        valor = self.combobox_pesquisa.get()
-        pesquisar = f"{self.entry_pesquisa.get()}%"
 
-        if valor == "Filtro" or valor == "Todos":
-            resultado = self.pesquisar_tudo_dietas(pesquisar)
-
-        elif valor == "ID":
-            resultado = self.like_bd("dim_dieta", "id_dieta", pesquisar)    
-
-        elif valor == "Nome":
-            resultado = self.like_bd("dim_dieta", "nome", pesquisar)
-        
-        elif valor == "CPF":
-            resultado = self.like_bd("dim_dieta", "cpf_paciente", pesquisar)
-        
-        elif valor == "Refeições":
-            resultado = self.like_bd("dim_dieta", "refeicoes", pesquisar)
-        
-        elif valor == "Calorias Diarias":
-            resultado = self.like_bd("dim_dieta", "calorias_diarias", pesquisar)
-        
-        for item in self.tree_dietas.get_children():
-            self.tree_dietas.delete(item)
-        
-        for i in resultado:
-            self.tree_dietas.insert("", "end", values=(i[0], i[1], i[2], i[3], i[4]))
-    
-
-    def editar_item_dietas(self):
-        self.selected_item = self.tree_dietas.selection()
+    def editar_item(self, tree, button, lista_de_entry):
+        self.selected_item = tree.selection()
 
         if not self.selected_item:
             showerror("ERRO", "Selecione um produto para usar esta função")
@@ -336,43 +254,145 @@ class Nutricionisa(Tk):
             showerror("ERRO", "Não é possivel editar mais de um item de uma vez")
         
         else:
-            self.button_cadastrar.config(text="Finalizar Edição")
+            button.config(text="Finalizar Edição")
             info = []
 
-            for i in range(1, 5):
-                infos = self.tree_dietas.item(self.selected_item, "values")[i]
+            colunas = tree["columns"]
+            for i in range(1, len(colunas)):
+                infos = tree.item(self.selected_item, "values")[i]
                 info.append(infos)
-
-            for entry, new_info in [(self.entry_nome, info[0]), 
-                                    (self.entry_cpfpaciente, info[1]),
-                                    (self.entry_refeicoes, info[2]),
-                                    (self.entry_caloriasdiarias, info[3])]:
+            
+            for entry, new_info in zip(lista_de_entry, info):
                             
                 entry.delete(0, END)
                 entry.insert(0, new_info)
                 entry.configure(fg="black")
-    
-    def cadastrar_alimento(self):
-        resultado = self.abrir_bd_fetchone("dim_dieta", "nome", self.entry_nome.get())
 
-        if resultado:
-            showerror("ERRO", "Este alimento ja existe no sistema")
+    def pesquisar_item(self, tree, lista_de_tuplas, pesquisa_total):
+        valor = self.combobox_pesquisa.get()
+        pesquisar_valor = f"{self.entry_pesquisa.get()}%"
+
+        if valor == "Filtro" or valor == "Todos":
+            resultado = pesquisa_total(pesquisar_valor)
+
+        for valor_pesquisa, coluna_bd in lista_de_tuplas:
+            if valor == valor_pesquisa:
+                resultado = self.like_bd("dim_alimento", coluna_bd, pesquisar_valor)
         
+        for item in tree.get_children():
+            tree.delete(item)
+        
+        colunas = tree["columns"]
+
+        for i in resultado:
+        
+            valores = i[:len(colunas)]
+            tree.insert("", "end", values=valores)
+
+    
+    def cadastrar_dieta(self):
+            resultado = self.abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
+            
+            if any(entry == "Nome:" or entry == "CPF Paciente:" or entry == "Refeições:" or entry == "Calorias Diárias" or entry == "" for entry in [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()]): 
+                showerror("ERRO", "Preencha todos os campos para fazer cadastro")
+                return
+                
+            elif not self.entry_cpfpaciente.get().isnumeric():
+                showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
+                return
+            
+            elif not self.entry_refeicoes.get().isnumeric():
+                showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
+                return
+
+            elif len(self.entry_cpfpaciente.get()) > 11 or len(self.entry_cpfpaciente.get()) < 11:
+                showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
+                return
+
+            try:
+                calorias = float(self.entry_caloriasdiarias.get())
+                if calorias <= 0:
+                    showerror("ERRO", "O valor de 'Calorias Diárias' deve ser maior que zero")
+                    return
+            except ValueError:
+                showerror("ERRO", "Insira apenas números no campo 'Calorias Diárias'")
+                return
+
+            if self.button_cadastrar.cget("text") == "Cadastrar":                
+                if resultado:
+                    showerror("ERRO", "Já existe uma dieta com este cpf")
+
+                else:    
+                    self.inserir_dieta_bd()
+
+        
+            elif self.button_cadastrar.cget("text") == "Finalizar Edição":
+                id_dieta = self.tree_dietas.item(self.selected_item, "values")[0]
+
+                
+                
+                for coluna, valor in [("nome", self.entry_nome.get()), 
+                                      ("cpf_paciente", self.entry_cpfpaciente.get()), 
+                                      ("refeicoes", self.entry_refeicoes.get()), 
+                                      ("calorias_diarias", self.entry_caloriasdiarias.get())]:
+                    
+                    self.atualizar_bd(coluna, valor, "dieta", id_dieta)
+                self.conexao.commit()
+            
+            else:
+                showerror("ERRO", "Reinicie o aplicativo")
+
+            for item in self.tree_dietas.get_children():
+                        self.tree_dietas.delete(item)
+                
+            self.info_treeview(self.tree_dietas, "dim_dieta", None, None)
+            
+            self.button_cadastrar.config(text="Cadastrar")
+            
+
+    def cadastrar_alimento(self):
+        resultado = self.abrir_bd_fetchone("dim_alimento", "nome", self.entry_nome.get())
+
+        if any(entry == "Nome:" or entry == "Calorias:" or entry == "Proteínas:" or entry == "Carboidratos:" or entry == "Gorduras:" or entry == "" for entry in [self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()]): 
+                showerror("ERRO", "Preencha todos os campos para fazer cadastro")
+                return
+
+
         for i in [self.entry_caloria.get(), self.entry_carboidrato.get(), self.entry_gordura.get(), self.entry_proteina.get()]:
             try:
                 float(i)
+                if float(i) <=0:
+                    showerror("ERRO", "Insira apenas valores acima de 0 nos campos de valores")
+                    return
             except ValueError:
                 showerror("ERRO", "Insira apenas valores numericos nos campos de valores")
-        
-        for i in [self.entry_caloria, self.entry_carboidrato, self.entry_gordura, self.entry_proteina]:
-            if not i.get().isnumeric():
-                showerror("ERRO", f"Insira apenas valores numericos nos campos de valores")
+                return
+
+        if self.button_cadastrar.cget("text") == "Cadastrar":
+            
+            if resultado:
+                showerror("ERRO", "Este alimento ja existe no sistema")
                 return
             
-        
-        if self.button_cadastrar.cget("text") == "Cadastrar":
             self.inserir_alimento_bd()
-            self.info_treeview(self.tree_alimentos, "dim_alimento", None, None)
+        
+        elif self.button_cadastrar.cget("text") == "Finalizar Edição":
+            id_alimento = self.tree_alimentos.item(self.selected_item, "values")[0]
+                
+            for coluna, valor in [("nome", self.entry_nome.get()), 
+                                  ("caloria", self.entry_caloria.get()), 
+                                  ("proteina", self.entry_proteina.get()), 
+                                  ("carboidrato", self.entry_carboidrato.get()),
+                                  ("gordura", self.entry_gordura.get())]:
+                    
+                self.atualizar_bd(coluna, valor, "alimento", id_alimento)
+            self.conexao.commit()
+            self.atualizar_bd(coluna, valor, "alimento", id_alimento)
+        
+        for item in self.tree_alimentos.get_children():
+            self.tree_alimentos.delete(item)
+
+        self.info_treeview(self.tree_alimentos, "dim_alimento", None, None)
 
     ##MYSQL
     def abrir_bd_fetchall(self, table, coluna, valor):
@@ -404,11 +424,11 @@ class Nutricionisa(Tk):
         self.cursor.execute("INSERT INTO dim_dieta(nome, cpf_paciente, refeicoes, calorias_diarias) VALUES(%s, %s, %s, %s)", (self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()))
         self.conexao.commit()
     
-    def atualizar_dieta_bd(self, coluna, valor_coluna, valor_id):
-        self.cursor.execute("UPDATE dim_dieta SET " + coluna + "=%s WHERE id_dieta =%s", (valor_coluna, valor_id))
+    def atualizar_bd(self, coluna, valor_coluna, id, valor_id):
+        self.cursor.execute("UPDATE dim_" + id + " SET " + coluna + "=%s WHERE id_" + id + "=%s", (valor_coluna, valor_id))
         self.conexao.commit()
     
-    def pesquisar_tudo_dietas(self, valor):
+    def pesquisar_tudo_dietas(self, valor): 
         self.cursor.execute("""
         SELECT * FROM dim_dieta WHERE id_dieta LIKE %s or 
         nome LIKE %s or 
@@ -418,7 +438,9 @@ class Nutricionisa(Tk):
         """, (valor, valor, valor, valor, valor))
         resultado = self.cursor.fetchall()
         return resultado
-    
+    def pesquisar_tudo_alimentos(self, valor):
+        pass;
+
     def inserir_alimento_bd(self):
         self.cursor.execute("INSERT INTO dim_alimento(nome, caloria, proteina, carboidrato, gordura) VALUES(%s, %s, %s, %s, %s)", (self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()))
         self.conexao.commit()

@@ -2,14 +2,97 @@ from tkinter import *
 from tkinter import ttk
 from tkinter.messagebox import *
 from bd import *
-from backend_nutri import *
+from backend import *
 
+##Login Screen
+class Login(Tk):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.login()
+
+    def clear(self):
+        for i in self.winfo_children():
+            i.destroy()
+
+    def login(self):
+        self.title('Login')
+        self.geometry('500x400')
+
+        Label(self, text="LOGIN", font=("Arial", 12, "bold")).pack(padx=10, pady=10)
+
+        self.label_nome = Label(self, text='Usuario:')
+        self.label_nome.pack()
+        self.entry_nome = Entry(self, width=30)
+        self.entry_nome.pack(pady=5)
+    
+        self.label_password = Label(self, text='Senha:')
+        self.label_password.pack()
+        self.entry_password = Entry(self, show='*', width=30)
+        self.entry_password.pack(pady=5)
+    
+        self.frame_buttons = Frame(self)
+        self.frame_buttons.pack(pady=20)
+    
+        self.button_login = Button(self.frame_buttons, text='Login', width=10, command=lambda: [fazer_login(self, self.entry_nome, self.entry_password, Nutricionisa)], bg="white")
+        self.button_login.pack(side=LEFT, padx=10)
+    
+        self.button_cancel = Button(self.frame_buttons, text='Cancelar', width=10, command=self.quit, bg="white")
+        self.button_cancel.pack(side=RIGHT, padx=10)
+
+        self.label_cadastrar = Label(self, text="Cadastrar-se", fg="skyblue")
+        self.label_cadastrar.pack()
+        self.label_cadastrar.bind("<Button>", self.cadastro)
+
+    def cadastro(self, event=None):
+        self.clear()
+        self.geometry("500x600")
+
+        Label(self, text="CADASTRO", font=("Arial", 12, "bold")).pack(padx=10, pady=10)
+
+        self.label_nome = Label(self, text='Nome:')
+        self.label_nome.pack()
+        self.entry_nome = Entry(self, width=30)
+        self.entry_nome.pack(pady=5)
+
+        self.label_cpf = Label(self, text='CPF: ')
+        self.label_cpf.pack()
+        self.entry_cpf = Entry(self, width=30)
+        self.entry_cpf.pack(pady=5)
+
+        self.label_peso = Label(self, text='Peso: ')
+        self.label_peso.pack()
+        self.entry_peso = Entry(self, width=30)
+        self.entry_peso.pack(pady=5)
+
+        self.label_altura = Label(self, text="Altura: ")
+        self.label_altura.pack()
+        self.entry_altura = Entry(self, width=30)
+        self.entry_altura.pack(pady=5)
+
+        self.framebutton = Frame(self)
+        self.framebutton.pack(pady=10)
+
+        self.var = IntVar()
+        self.var.set(0)
+        self.radionbutton_frame = Frame(self)
+        self.radionbutton_frame.pack()        
+        self.radio_nutricionistaa = Radiobutton(self.radionbutton_frame, text="Nutricionista", value=1, variable=self.var)
+        self.radio_paciente = Radiobutton(self.radionbutton_frame, text="Paciente", value=2, variable=self.var)
+        self.radio_nutricionistaa.pack()
+        self.radio_paciente.pack()
+        
+        self.button_cadastrar = Button(self, text='Cadastrar', width=20, command=lambda: [cadastro_usuario(self)], bg="white")
+        self.button_cadastrar.pack(padx=10, pady=10)
+    
+        self.botao_cancelar = Button(self, text='Cancelar', width=20, command=lambda: [self.clear(), self.login()], bg="white")
+        self.botao_cancelar.pack(padx=10, pady=10)
+
+##Nutri Screen
 class Nutricionisa(Tk):
     def __init__(self, *args):
         super().__init__(*args)
         self.start()
     
-    ##FRONT-END
     def start(self):
         self.clear()
         self.title("NutryApp")
@@ -115,7 +198,7 @@ class Nutricionisa(Tk):
         self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: [remover_item(self.tree_dietas,  "dim_dieta", "id_dieta", 0)])
         self.button_remover.place(x=1047, y=667)
 
-        self.button_refeicoes = Button(self, text="Ver Refeições", bg="white", width=10, command=lambda: [ver_refeicoes(self, self.tree_dietas, 1), self.ver_refeicoes_tab()])
+        self.button_refeicoes = Button(self, text="Ver Refeições", bg="white", width=10, command=lambda: [self.ver_refeicoes_tab()])
         self.button_refeicoes.place(x=250, y=667)
 
         self.tree_dietas = ttk.Treeview(self, columns=("ID", "Nome", "CPF do Paciente", "Refeições", "Calorias Diárias"), show="headings", height=22)
@@ -298,11 +381,25 @@ class Nutricionisa(Tk):
 
     def ver_refeicoes_tab(self):
         screen_ref = Tk()
-        screen_ref.geometry("720x1080")
+        screen_ref.geometry("982x750")
 
+        Label(screen_ref, text="PLANO DE REFEIÇÃO", font=("Arial", 17, "bold")).pack()
+        self.label_paciente = Label(screen_ref, text="Paciente: ", font="Arial").place(x=190, y=60)
+        self.tree_refeicao_e_dieta = ttk.Treeview(screen_ref, columns=("Refeição", "Horário", "Medida(KG)"), show="headings", height=22)
+        self.tree_refeicao_e_dieta.pack(pady=100)
+
+        for i in ["Refeição", "Horário", "Medida(KG)"]:
+            self.tree_refeicao_e_dieta.heading(f"{i}", text=f"{i}")
+
+        for i in [("Refeição", 200), ("Horário", 200), ("Medida(KG)", 200)]:
+            self.tree_refeicao_e_dieta.column(i[0], width=i[1], anchor="center")
+
+        scrollbar = Scrollbar(screen_ref, orient=VERTICAL, command=self.tree_refeicao_e_dieta.yview)
+        scrollbar.place(x=1126, y=200, height=465)
+        
+        planejamento_refeicoes(self, self.tree_refeicao_e_dieta)
         screen_ref.mainloop()
 
-
 if __name__ == "__main__":
-    app = Nutricionisa()
+    app = Login()
     app.mainloop()

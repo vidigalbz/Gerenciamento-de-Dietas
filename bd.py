@@ -1,8 +1,7 @@
 import mysql.connector
 
-
 estrutura = """
-dim_usuario =  ID, nome, email, cpf, tipo (nutrólogo ou paciente), id_dieta
+dim_usuario =  ID, nome, cpf, peso, altura, tipo (nutrólogo ou paciente)
 fato_tipo =  ID, tipo
 
 dim_dieta = ID, cpf_paciente, nome, calorias_diarias, 

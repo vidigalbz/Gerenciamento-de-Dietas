@@ -1,7 +1,9 @@
 from bd import *
 from  tkinter import *
 from tkinter.messagebox import *
+from frontend import *
 
+##NUTRICIONISTA
 def info_treeview(tree, tabela, coluna, valor):
     resultado = abrir_bd_fetchall("*", tabela, coluna, valor)
     colunas = tree["columns"]
@@ -234,6 +236,8 @@ def cadastrar_refeicao(self):
         self.tree_refeicao.delete(item)
     
     info_treeview_refeicao(self)
+    self.combobox_alimento.set("")
+    self.combobox_dieta.set("")
     
     self.button_cadastrar.config(text="Cadastrar")
 
@@ -268,3 +272,49 @@ def ver_refeicoes(self, tree, valor):
     a = tree.item(self.selected_item, "values")[valor]
 
     resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "nome", a)
+    
+    return resultado
+
+def planejamento_refeicoes(self, tree):
+    resultado = ver_refeicoes(self, self.tree_dietas, 1)
+    for i in resultado:
+        alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
+
+        tree.insert("", "end", values=(alimento, i[3], i[4]))
+
+##LOGIN
+def cadastro_usuario(self):
+    if self.entry_nome.get().isnumeric():
+        showerror("ERRO", "Não insira números no campo de 'Nome'")
+        return
+    
+    elif len(self.entry_cpf.get()) > 11:
+        showerror("ERRO", "O campo 'CPF' está incorreto")
+        return
+    
+    resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpf.get())
+    if resultado:
+        showerror("ERRO", "Ja existe um usuario com este cpf")
+    
+    for i in [self.entry_peso.get(), self.entry_altura.get()]:
+    
+        try:
+            float(i)
+    
+        except ValueError:
+            showerror("ERRO", "Insira apenas números para peso ou altura")
+            return
+        
+    inserir_bd("dim_usuario", ("nome", "cpf", "altura", "peso", "tipo"), [self.entry_nome.get(), self.entry_cpf.get(), self.entry_peso.get(), self.entry_altura.get(), self.var.get()])
+
+def fazer_login(tela, entry_usuario, entry_senha, tela_nutri):
+    resultado = abrir_bd_fetchall("nome, cpf, tipo", "dim_usuario", None, None)
+    login = False
+    for i in resultado:
+        if entry_usuario.get() == i[0] and int(entry_senha.get()) == i[1]:
+            if i[2] == 1:
+                tela.destroy()
+                app = tela_nutri()
+                app.mainloop()
+        else:
+            print("erro")

@@ -236,9 +236,7 @@ def cadastrar_refeicao(self):
         self.tree_refeicao.delete(item)
     
     info_treeview_refeicao(self)
-    self.combobox_alimento.set("")
-    self.combobox_dieta.set("")
-    
+
     self.button_cadastrar.config(text="Cadastrar")
 
 def info_treeview_refeicao(self):
@@ -266,21 +264,22 @@ def editar_combobox_refeicao(self):
     self.combobox_dieta.set(dieta)
     self.combobox_dieta.config(foreground="black")
 
-def ver_refeicoes(self, tree, valor):
-    self.selected_item = tree.selection()
+def info_treeview_refeicoesEdietas(self, tree):
+    self.selected_item = self.tree_dietas.selection()
 
-    a = tree.item(self.selected_item, "values")[valor]
+    a = self.tree_dietas.item(self.selected_item, "values")[1]
 
     resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "nome", a)
     
-    return resultado
-
-def planejamento_refeicoes(self, tree):
-    resultado = ver_refeicoes(self, self.tree_dietas, 1)
     for i in resultado:
         alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
-
         tree.insert("", "end", values=(alimento, i[3], i[4]))
+
+    for i in resultado:
+        nome_paciente = abrir_bd_fetchall("nome", "dim_usuario", "cpf", i[7])
+        
+        for j in nome_paciente:
+            self.label_paciente.config(text=f"Paciente: {j[1]}")
 
 ##LOGIN
 def cadastro_usuario(self):
@@ -307,14 +306,32 @@ def cadastro_usuario(self):
         
     inserir_bd("dim_usuario", ("nome", "cpf", "altura", "peso", "tipo"), [self.entry_nome.get(), self.entry_cpf.get(), self.entry_peso.get(), self.entry_altura.get(), self.var.get()])
 
-def fazer_login(tela, entry_usuario, entry_senha, tela_nutri):
+def fazer_login(tela, entry_usuario, entry_senha, tela_nutri, tela_paciente):
     resultado = abrir_bd_fetchall("nome, cpf, tipo", "dim_usuario", None, None)
-    login = False
     for i in resultado:
         if entry_usuario.get() == i[0] and int(entry_senha.get()) == i[1]:
             if i[2] == 1:
+                cpf.append(entry_senha.get())
                 tela.destroy()
                 app = tela_nutri()
                 app.mainloop()
-        else:
-            print("erro")
+            else:
+                cpf.append(entry_senha.get())
+                tela.destroy()
+                app = tela_paciente()
+                app.mainloop()
+    else:
+        print("erro")
+
+##PACIENTE
+def get_cpf(cpf, entry):
+    cpf.append(int(entry.get()))
+
+def info_treeview_paciente(self, tree):
+    print(int(cpf[0]))
+    resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "cpf_paciente", int(cpf[0]))
+    print(resultado)
+    for i in resultado:
+        alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
+        tree.insert("", "end", values=(alimento, i[3], i[4]))
+        self.label_dieta.config(text=f"Dieta: {i[6]}")

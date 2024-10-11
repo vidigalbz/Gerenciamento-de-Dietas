@@ -4,6 +4,8 @@ from tkinter.messagebox import *
 from bd import *
 from backend import *
 
+cpf = []
+
 ##Login Screen
 class Login(Tk):
     def __init__(self, *args):
@@ -32,8 +34,8 @@ class Login(Tk):
     
         self.frame_buttons = Frame(self)
         self.frame_buttons.pack(pady=20)
-    
-        self.button_login = Button(self.frame_buttons, text='Login', width=10, command=lambda: [fazer_login(self, self.entry_nome, self.entry_password, Nutricionisa)], bg="white")
+
+        self.button_login = Button(self.frame_buttons, text='Login', width=10, command=lambda: [get_cpf(cpf, self.entry_password), fazer_login(self, self.entry_nome, self.entry_password, Nutricionisa, Paciente)], bg="white")
         self.button_login.pack(side=LEFT, padx=10)
     
         self.button_cancel = Button(self.frame_buttons, text='Cancelar', width=10, command=self.quit, bg="white")
@@ -48,7 +50,6 @@ class Login(Tk):
         self.geometry("500x600")
 
         Label(self, text="CADASTRO", font=("Arial", 12, "bold")).pack(padx=10, pady=10)
-
         self.label_nome = Label(self, text='Nome:')
         self.label_nome.pack()
         self.entry_nome = Entry(self, width=30)
@@ -125,6 +126,8 @@ class Nutricionisa(Tk):
             combobox.config(foreground=color)
     
     def dashboard(self):
+        Label(self, text="BEM-VINDO!", font=("Arial", 17, "bold")).place(x=600, y=30)
+
         self.frame_dashboard = Frame(self, width=200, height=1080, bg="#007FFF")
         self.frame_dashboard.place(x=0, y=0)
         self.frame_dashboard.propagate(False)
@@ -198,7 +201,7 @@ class Nutricionisa(Tk):
         self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: [remover_item(self.tree_dietas,  "dim_dieta", "id_dieta", 0)])
         self.button_remover.place(x=1047, y=667)
 
-        self.button_refeicoes = Button(self, text="Ver Refeições", bg="white", width=10, command=lambda: [self.ver_refeicoes_tab()])
+        self.button_refeicoes = Button(self, text="Ver Refeições", bg="white", width=10, command=lambda: [self.ver_refeicoes()])
         self.button_refeicoes.place(x=250, y=667)
 
         self.tree_dietas = ttk.Treeview(self, columns=("ID", "Nome", "CPF do Paciente", "Refeições", "Calorias Diárias"), show="headings", height=22)
@@ -333,9 +336,9 @@ class Nutricionisa(Tk):
 
         self.entry_medida = Entry(self, width=21, fg="gray")
         self.entry_medida.place(x=850, y=75)
-        self.entry_medida.insert(0, "Medida(KG):")
-        self.entry_medida.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_medida, "Medida(KG):", "black"))
-        self.entry_medida.bind("<FocusOut>", lambda event: self.Infocus_entry(self.entry_medida, "Medida(KG):", "gray"))
+        self.entry_medida.insert(0, "Medida(G):")
+        self.entry_medida.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_medida, "Medida(G):", "black"))
+        self.entry_medida.bind("<FocusOut>", lambda event: self.Infocus_entry(self.entry_medida, "Medida(G):", "gray"))
 
         self.frame_pesquisa = Frame(self)
         self.frame_pesquisa.place(x=250, y=175)
@@ -360,13 +363,13 @@ class Nutricionisa(Tk):
         self.button_remover = Button(self, text="Remover", bg="white", width=10, command=lambda: (remover_item(self.tree_refeicao,  "dim_refeicao", "id_refeicao", 0)))
         self.button_remover.place(x=1047, y=667)
 
-        self.tree_refeicao = ttk.Treeview(self, columns=("ID", "Alimento", "Dieta", "Horário", "Medida(KG)"), show="headings", height=22)
+        self.tree_refeicao = ttk.Treeview(self, columns=("ID", "Alimento", "Dieta", "Horário", "Medida(G)"), show="headings", height=22)
         self.tree_refeicao.place(x=250, y=200)
 
-        for i in ["ID", "Alimento", "Dieta", "Horário", "Medida(KG)"]:
+        for i in ["ID", "Alimento", "Dieta", "Horário", "Medida(G)"]:
             self.tree_refeicao.heading(f"{i}", text=f"{i}")
 
-        for i in [("ID", 175), ("Alimento", 175), ("Dieta", 175), ("Horário", 175), ("Medida(KG)", 175)]:
+        for i in [("ID", 175), ("Alimento", 175), ("Dieta", 175), ("Horário", 175), ("Medida(G)", 175)]:
             self.tree_refeicao.column(i[0], width=i[1], anchor="center")
         
         scrollbar = Scrollbar(self, orient=VERTICAL, command=self.tree_refeicao.yview)
@@ -379,26 +382,64 @@ class Nutricionisa(Tk):
 
         info_treeview_refeicao(self)
 
-    def ver_refeicoes_tab(self):
+    def ver_refeicoes(self):
         screen_ref = Tk()
         screen_ref.geometry("982x750")
+        screen_ref.title("Plano de Refeição")
+
+        self.button_voltar = Button(screen_ref, text="<< Voltar", command=screen_ref.destroy, bg="white")
+        self.button_voltar.place(x=0, y=0)
 
         Label(screen_ref, text="PLANO DE REFEIÇÃO", font=("Arial", 17, "bold")).pack()
-        self.label_paciente = Label(screen_ref, text="Paciente: ", font="Arial").place(x=190, y=60)
-        self.tree_refeicao_e_dieta = ttk.Treeview(screen_ref, columns=("Refeição", "Horário", "Medida(KG)"), show="headings", height=22)
+        self.label_paciente = Label(screen_ref, text="Paciente: ", font="Arial")
+        self.label_paciente.place(x=190, y=60)
+
+        self.tree_refeicao_e_dieta = ttk.Treeview(screen_ref, columns=("Refeição", "Horário", "Medida(G)"), show="headings", height=22)
         self.tree_refeicao_e_dieta.pack(pady=100)
 
-        for i in ["Refeição", "Horário", "Medida(KG)"]:
+        for i in ["Refeição", "Horário", "Medida(G)"]:
             self.tree_refeicao_e_dieta.heading(f"{i}", text=f"{i}")
 
-        for i in [("Refeição", 200), ("Horário", 200), ("Medida(KG)", 200)]:
+        for i in [("Refeição", 200), ("Horário", 200), ("Medida(G)", 200)]:
             self.tree_refeicao_e_dieta.column(i[0], width=i[1], anchor="center")
 
         scrollbar = Scrollbar(screen_ref, orient=VERTICAL, command=self.tree_refeicao_e_dieta.yview)
-        scrollbar.place(x=1126, y=200, height=465)
-        
-        planejamento_refeicoes(self, self.tree_refeicao_e_dieta)
+        scrollbar.place(x=790, y=133, height=465)
+        info_treeview_refeicoesEdietas(self, self.tree_refeicao_e_dieta)
         screen_ref.mainloop()
+
+
+##PACIENTE  
+class Paciente(Tk):
+    def __init__(self, *args):
+        super().__init__(*args)
+        self.start()
+    
+    def start(self):
+        self.clear()
+        self.title("NutryApp")
+        self.geometry("1180x720")
+        self.dashboard()
+        
+    def clear(self):
+        for i in self.winfo_children():
+            i.destroy()
+
+    def dashboard(self):
+        Label(self, text="BEM-VINDO!", font=("Arial", 18, "bold")).pack(padx=15, pady=15)
+        self.label_dieta = Label(self, text="Minha Dieta: ", font="bold")
+        self.label_dieta.place(x=200, y=75)
+
+        self.tree_paciente = ttk.Treeview(self, columns=("Alimento", "Horário", "Medida(G)"), show="headings", height=22)
+        self.tree_paciente.place(x=300, y=150)
+
+        for i in ["Alimento", "Horário", "Medida(G)"]:
+            self.tree_paciente.heading(f"{i}", text=f"{i}")
+
+        for i in [("Alimento", 200), ("Horário", 200), ("Medida(G)", 200)]:
+            self.tree_paciente.column(i[0], width=i[1], anchor="center")
+
+        info_treeview_paciente(self, self.tree_paciente)
 
 if __name__ == "__main__":
     app = Login()

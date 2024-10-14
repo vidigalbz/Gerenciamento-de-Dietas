@@ -59,28 +59,6 @@ class Login(Tk):
         self.label_cpf.pack()
         self.entry_cpf = Entry(self, width=30)
         self.entry_cpf.pack(pady=5)
-
-        self.label_peso = Label(self, text='Peso: ')
-        self.label_peso.pack()
-        self.entry_peso = Entry(self, width=30)
-        self.entry_peso.pack(pady=5)
-
-        self.label_altura = Label(self, text="Altura: ")
-        self.label_altura.pack()
-        self.entry_altura = Entry(self, width=30)
-        self.entry_altura.pack(pady=5)
-
-        self.framebutton = Frame(self)
-        self.framebutton.pack(pady=10)
-
-        self.var = IntVar()
-        self.var.set(0)
-        self.radionbutton_frame = Frame(self)
-        self.radionbutton_frame.pack()        
-        self.radio_nutricionistaa = Radiobutton(self.radionbutton_frame, text="Nutricionista", value=1, variable=self.var)
-        self.radio_paciente = Radiobutton(self.radionbutton_frame, text="Paciente", value=2, variable=self.var)
-        self.radio_nutricionistaa.pack()
-        self.radio_paciente.pack()
         
         self.button_cadastrar = Button(self, text='Cadastrar', width=20, command=lambda: [cadastro_usuario(self)], bg="white")
         self.button_cadastrar.pack(padx=10, pady=10)
@@ -144,6 +122,9 @@ class Nutricionisa(Tk):
         self.button_planejamentoderefeicoes = Button(self.frame_dashboard, width=20, height=3, bg="white", text="Planejar Refeições", font=("Arial", 9, "bold"), command=self.planejamento_de_refeicoes)
         self.button_planejamentoderefeicoes.place(x=25, y=390)
 
+        self.button_cadastrarpaciente = Button(self.frame_dashboard, width=20, height=3, bg="white", text="Cadastrar Paciente", font=("Arial", 9, "bold"), command=self.cadastrar_paciente)
+        self.button_cadastrarpaciente.place(x=25, y=460)
+
     def gerenciamento_de_dietas(self):
         self.clear()
         self.button_alimentos.config(bg="white")
@@ -160,7 +141,10 @@ class Nutricionisa(Tk):
         self.entry_nome.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_nome, "Nome:", "black"))
         self.entry_nome.bind("<FocusOut>", lambda event: self.Infocus_entry(self.entry_nome, "Nome:", "gray"))
 
-        self.entry_cpfpaciente = Entry(self, width=25, fg="gray")
+
+        self.entry_var = StringVar()
+        self.entry_var.trace_add("write", lambda *args: calculo_caloriasdiarias(self, self.entry_var))
+        self.entry_cpfpaciente = Entry(self, width=25, fg="gray", textvariable=self.entry_var)
         self.entry_cpfpaciente.place(x=450, y=75)
         self.entry_cpfpaciente.insert(0, "CPF Paciente: ")
         self.entry_cpfpaciente.bind("<FocusIn>", lambda event: self.focus_entry(self.entry_cpfpaciente, "CPF Paciente: ", "black"))
@@ -408,6 +392,62 @@ class Nutricionisa(Tk):
         info_treeview_refeicoesEdietas(self, self.tree_refeicao_e_dieta)
         screen_ref.mainloop()
 
+    def cadastrar_paciente(self):
+        self.clear()
+        
+        Label(self, text="CADASTRO DE PACIENTES", font=("Arial", 14, "bold")).place(x=550, y=30)
+
+        # Nome
+        self.label_nome = Label(self, text='Nome:')
+        self.label_nome.place(x=575, y=75)
+        self.entry_nome = Entry(self, width=30)
+        self.entry_nome.place(x=575, y=100)
+
+        # CPF
+        self.label_cpf = Label(self, text='CPF:')
+        self.label_cpf.place(x=575, y=150)
+        self.entry_cpf = Entry(self, width=30)
+        self.entry_cpf.place(x=575, y=175)
+
+        # Idade
+        self.label_idade = Label(self, text='Idade:')
+        self.label_idade.place(x=575, y=225)
+        self.entry_idade = Entry(self, width=30)
+        self.entry_idade.place(x=575, y=250)
+
+        # Peso
+        self.label_peso = Label(self, text='Peso:')
+        self.label_peso.place(x=575, y=300)
+        self.entry_peso = Entry(self, width=30)
+        self.entry_peso.place(x=575, y=325)
+
+        # Altura
+        self.label_altura = Label(self, text='Altura:')
+        self.label_altura.place(x=575, y=375)
+        self.entry_altura = Entry(self, width=30)
+        self.entry_altura.place(x=575, y=400)
+
+        filtro = ["Sedentário", "Levemente ativo", "Moderadamente ativo", "Muito ativo", "Extremamente ativo"]
+        self.combobox_atividadefisica = ttk.Combobox(self, values=filtro, width=27)
+        self.combobox_atividadefisica.set("Atividade Física")
+        self.combobox_atividadefisica.place(x=575, y=450)
+        self.combobox_atividadefisica.config(state="readonly")
+        
+        # Sexo (Radiobuttons)
+        self.var = IntVar()
+        self.var.set(0)
+        self.label_sexo = Label(self, text="Sexo:")
+        self.label_sexo.place(x=575, y=500)
+        
+        self.radio_masculino = Radiobutton(self, text="Masculino", value=1, variable=self.var)
+        self.radio_masculino.place(x=575, y=475)
+        
+        self.radio_feminino = Radiobutton(self, text="Feminino", value=2, variable=self.var)
+        self.radio_feminino.place(x=575, y=500)
+
+        # Botão Cadastrar
+        self.button_cadastrar = Button(self, text='Cadastrar', width=20, command=lambda: [cadastro_paciente(self)], bg="white")
+        self.button_cadastrar.place(x=575, y=530)
 
 ##PACIENTE  
 class Paciente(Tk):

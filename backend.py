@@ -111,14 +111,14 @@ def pesquisar_item_join(self):
 def cadastrar_dieta(self):
     resultado = abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
         
-    if any(entry == "Nome:" or entry == "CPF Paciente:" or entry == "Refeições:" or entry == "Calorias Diárias" or entry == "" for entry in [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()]): 
+    if any(entry in ["Nome:", "CPF Paciente:", "Refeições:", "Calorias Diárias"] or entry.strip() == "" for entry in [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()]):
         showerror("ERRO", "Preencha todos os campos para fazer cadastro")
         return
-            
+
     elif not self.entry_cpfpaciente.get().isnumeric():
         showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
-        return
-        
+        return    
+    
     elif not self.entry_refeicoes.get().isnumeric():
         showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
         return
@@ -142,6 +142,7 @@ def cadastrar_dieta(self):
 
         else:    
             inserir_bd("dim_dieta", ["nome", "cpf_paciente", "refeicoes", "calorias_diarias"], (self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()))
+            showinfo("SUCESSO", "Cadastro concluido!")
 
     elif self.button_cadastrar.cget("text") == "Finalizar Edição":
         id_dieta = self.tree_dietas.item(self.selected_item, "values")[0]
@@ -153,6 +154,7 @@ def cadastrar_dieta(self):
                 
             atualizar_bd(coluna, valor, "dieta", id_dieta)
         conexao.commit()
+        showinfo("SUCESSO", "Edição concluida!")
         
     else:
         showerror("ERRO", "Reinicie o aplicativo")
@@ -168,10 +170,9 @@ def cadastrar_dieta(self):
 def cadastrar_alimento(self):
     resultado = abrir_bd_fetchone("dim_alimento", "nome", self.entry_nome.get())
 
-    if any(entry == "Nome:" or entry == "Calorias:" or entry == "Proteínas:" or entry == "Carboidratos:" or entry == "Gorduras:" or entry == "" for entry in [self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()]): 
-            showerror("ERRO", "Preencha todos os campos para fazer cadastro")
-            return
-
+    if any(entry in ["Nome:", "Calorias:", "Proteínas:", "Carboidratos:", "Gorduras:"] or entry.strip() == "" for entry in [self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()]):
+        showerror("ERRO", "Preencha todos os campos para fazer cadastro")
+        return
 
     for i in [self.entry_caloria.get(), self.entry_carboidrato.get(), self.entry_gordura.get(), self.entry_proteina.get()]:
         try:
@@ -191,7 +192,8 @@ def cadastrar_alimento(self):
             return
         
         inserir_bd("dim_alimento", ["nome", "caloria", "proteina", "carboidrato", "gordura"], (self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()))
-    
+        showinfo("SUCESSO", "Cadastro concluido!")
+
     elif self.button_cadastrar.cget("text") == "Finalizar Edição":
         id_alimento = self.tree_alimentos.item(self.selected_item, "values")[0]
             
@@ -203,6 +205,7 @@ def cadastrar_alimento(self):
                 
             atualizar_bd(coluna, valor, "alimento", id_alimento)
         conexao.commit()
+        showinfo("SUCESSO", "Edição concluida!")
     
     for item in self.tree_alimentos.get_children():
         self.tree_alimentos.delete(item)
@@ -215,13 +218,18 @@ def cadastrar_refeicao(self):
     id_alimento = valores_fatos("dim_alimento", "id_alimento", "nome", self.combobox_alimento.get())
     id_dieta = valores_fatos("dim_dieta", "id_dieta", "nome", self.combobox_dieta.get())
 
-    if id_alimento == "None" or id_dieta == "None":
+    if any(entry in ["Horário:", "Medida:"] or entry.strip() == "" for entry in [self.entry_horario.get(), self.entry_medida.get()]):
+        showerror("ERRO", "Preencha todos os campos para fazer cadastro")
+        return
+
+    elif id_alimento == "None" or id_dieta == "None":
         showerror("ERRO", "Dieta ou Alimento nao existentes")
         return
     
     if self.button_cadastrar.cget("text") == "Cadastrar":
         inserir_bd("dim_refeicao", ["alimento", "dieta", "horario", "medida"], (id_alimento, id_dieta, self.entry_horario.get(), self.entry_medida.get()))
-    
+        showinfo("SUCESSO", "Cadastro concluido!")
+
     elif self.button_cadastrar.cget("text") == "Finalizar Edição":
         id_refeicao = self.tree_refeicao.item(self.selected_item, "values")[0]
 
@@ -231,6 +239,7 @@ def cadastrar_refeicao(self):
                                 ("medida", self.entry_medida.get())]:
             atualizar_bd(coluna, valor, "refeicao", id_refeicao)
         conexao.commit()
+        showinfo("SUCESSO", "Edição concluida!")
 
     for item in self.tree_refeicao.get_children():
         self.tree_refeicao.delete(item)
@@ -281,6 +290,53 @@ def info_treeview_refeicoesEdietas(self, tree):
         for j in nome_paciente:
             self.label_paciente.config(text=f"Paciente: {j[1]}")
 
+def cadastro_paciente(self):
+    if self.entry_nome.get().isnumeric():
+        showerror("ERRO", "Não insira números no campo de 'Nome'")
+        return
+    
+    elif len(self.entry_cpf.get()) > 11:
+        showerror("ERRO", "O campo 'CPF' está incorreto")
+        return
+    
+    elif self.var.get() == 0:
+        showerror("ERRO", "Selecione um tipo de usuario")
+        return
+    
+    elif self.combobox_atividadefisica.get() == "Atividade Física":
+        showerror("ERRO", "Selecione o quanto de atividade fisica vc faz")
+    
+    resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpf.get())
+
+    if resultado:
+        showerror("ERRO", "Ja existe um usuario com este cpf")
+        return
+    atividade_fisica = combobox_valor(self)
+    inserir_bd("dim_usuario", ["nome", "cpf", "idade", "altura", "peso", "sexo", "atividade_fisica", "tipo"], [self.entry_nome.get(), self.entry_cpf.get(), self.entry_idade.get(), self.entry_altura.get(), self.entry_peso.get(), self.var.get(), atividade_fisica, 2])
+
+def calculo_caloriasdiarias(self, entry_var, *args):
+    if len(entry_var.get()) == 11:
+        resultado = abrir_bd_fetchall("*", "dim_usuario", "cpf", int(entry_var.get()))
+        for i in resultado:
+            atividade_fisica = abrir_bd_fetchall("atividade_fisica", "fato_atividadefisica", "id_atividadefisica", i[7])
+            print(atividade_fisica)
+            if i[6] == 1:
+                cal = 88.36 + (13.4 * i[4]) + (4.8 * (i[3] * 100)) - (5.7 * i[5])
+                for i in [(('Sedentário', 1.25), ('Levemente Ativo', 1.375), ('Moderadamente Ativo', 1.55), ('Muito Ativo', 1.725), ('Extremamente Ativo', 1.9))]:
+                    if atividade_fisica == i[0]:
+                        cal = cal * i[1]
+                        self.entry_caloriasdiarias.delete(0, END)
+                        self.entry_caloriasdiarias.insert(0, cal)
+                        self.entry_caloriasdiarias.config()
+            elif i[6] == 2:
+                cal = 447.6 + (9.2 * i[4]) + (3.1 * (i[3] * 100)) - (5.7 * i[5])
+
+def combobox_valor(self):
+    for i in [('Sedentário', 1),('Levemente ativo', 2),('Moderadamente ativo', 3),('Muito ativo', 4),('Extremamente ativo', 5)]:
+        if self.combobox_atividadefisica.get() == i[0]:
+            return i[1]
+    
+    
 ##LOGIN
 def cadastro_usuario(self):
     if self.entry_nome.get().isnumeric():
@@ -291,23 +347,21 @@ def cadastro_usuario(self):
         showerror("ERRO", "O campo 'CPF' está incorreto")
         return
     
+    elif self.entry_nome.get().strip() == "" or self.entry_cpf.get().strip() == "":
+        showerror("ERRO", "Preencha todos os campos")
+        return
+    
     resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpf.get())
+    
     if resultado:
         showerror("ERRO", "Ja existe um usuario com este cpf")
-    
-    for i in [self.entry_peso.get(), self.entry_altura.get()]:
-    
-        try:
-            float(i)
-    
-        except ValueError:
-            showerror("ERRO", "Insira apenas números para peso ou altura")
-            return
         
-    inserir_bd("dim_usuario", ("nome", "cpf", "altura", "peso", "tipo"), [self.entry_nome.get(), self.entry_cpf.get(), self.entry_peso.get(), self.entry_altura.get(), self.var.get()])
+    inserir_bd("dim_usuario", ["nome", "cpf", "tipo"], [self.entry_nome.get(), self.entry_cpf.get(), 1])
+    showinfo("SUCESSO", "Cadastro concluido!\nSua senha é seu CPF!")
 
 def fazer_login(tela, entry_usuario, entry_senha, tela_nutri, tela_paciente):
     resultado = abrir_bd_fetchall("nome, cpf, tipo", "dim_usuario", None, None)
+    print(resultado)
     for i in resultado:
         if entry_usuario.get() == i[0] and int(entry_senha.get()) == i[1]:
             if i[2] == 1:

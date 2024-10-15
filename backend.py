@@ -126,6 +126,11 @@ def cadastrar_dieta(self):
     elif len(self.entry_cpfpaciente.get()) > 11 or len(self.entry_cpfpaciente.get()) < 11:
         showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
         return
+    
+    for i in resultado:
+        if i[8] == 1:
+            showerror("ERRO", "Não existe paciente cadastrado com este CPF")
+            return
 
     try:
         calorias = float(self.entry_caloriasdiarias.get())
@@ -319,15 +324,24 @@ def calculo_caloriasdiarias(self, entry_var, *args):
         resultado = abrir_bd_fetchall("*", "dim_usuario", "cpf", int(entry_var.get()))
         for i in resultado:
             atividade_fisica = abrir_bd_fetchall("atividade_fisica", "fato_atividadefisica", "id_atividadefisica", i[7])
-            print(atividade_fisica)
             if i[6] == 1:
                 cal = 88.36 + (13.4 * i[4]) + (4.8 * (i[3] * 100)) - (5.7 * i[5])
-                for i in [(('Sedentário', 1.25), ('Levemente Ativo', 1.375), ('Moderadamente Ativo', 1.55), ('Muito Ativo', 1.725), ('Extremamente Ativo', 1.9))]:
-                    if atividade_fisica == i[0]:
-                        cal = cal * i[1]
-                        self.entry_caloriasdiarias.delete(0, END)
-                        self.entry_caloriasdiarias.insert(0, cal)
-                        self.entry_caloriasdiarias.config()
+                imc = i[4] / (i[3] * i[3])
+                for i in [('Sedentário', 1.25), ('Levemente Ativo', 1.375), ('Moderadamente Ativo', 1.55), ('Muito Ativo', 1.725), ('Extremamente Ativo', 1.9)]:
+                    for j in atividade_fisica:
+                        if j[1] == i[0]:
+                            cal = cal * i[1]
+                            if imc < 18.5:
+                                cal += 400
+                            
+                            elif imc > 25:
+                                cal -= 400
+                            
+                            elif imc > 29.9:
+                                cal -= 750
+                            self.entry_caloriasdiarias.delete(0, END)
+                            self.entry_caloriasdiarias.insert(0, cal)
+                            self.entry_caloriasdiarias.config(fg="black")
             elif i[6] == 2:
                 cal = 447.6 + (9.2 * i[4]) + (3.1 * (i[3] * 100)) - (5.7 * i[5])
 
@@ -335,8 +349,7 @@ def combobox_valor(self):
     for i in [('Sedentário', 1),('Levemente ativo', 2),('Moderadamente ativo', 3),('Muito ativo', 4),('Extremamente ativo', 5)]:
         if self.combobox_atividadefisica.get() == i[0]:
             return i[1]
-    
-    
+
 ##LOGIN
 def cadastro_usuario(self):
     if self.entry_nome.get().isnumeric():
@@ -361,7 +374,6 @@ def cadastro_usuario(self):
 
 def fazer_login(tela, entry_usuario, entry_senha, tela_nutri, tela_paciente):
     resultado = abrir_bd_fetchall("nome, cpf, tipo", "dim_usuario", None, None)
-    print(resultado)
     for i in resultado:
         if entry_usuario.get() == i[0] and int(entry_senha.get()) == i[1]:
             if i[2] == 1:
@@ -374,17 +386,23 @@ def fazer_login(tela, entry_usuario, entry_senha, tela_nutri, tela_paciente):
                 tela.destroy()
                 app = tela_paciente()
                 app.mainloop()
-    else:
-        print("erro")
+
+def pacientes(self):
+    resultado = abrir_bd_fetchall("*", "dim_usuario", "tipo", 2)
+
+    for i in resultado:
+        sexo = valores_fatos("fato_sexo", "sexo", "id_sexo", i[6])
+        atividade_fisica = valores_fatos("fato_atividadefisica", "atividade_fisica", "id_atividadefisica", i[7])
+
+        self.tree_pacientes.insert("", 0, values=(i[0], i[1], i[2], i[3], i[4], i[5], sexo, atividade_fisica))
+    
 
 ##PACIENTE
 def get_cpf(cpf, entry):
     cpf.append(int(entry.get()))
 
 def info_treeview_paciente(self, tree):
-    print(int(cpf[0]))
     resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "cpf_paciente", int(cpf[0]))
-    print(resultado)
     for i in resultado:
         alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
         tree.insert("", "end", values=(alimento, i[3], i[4]))

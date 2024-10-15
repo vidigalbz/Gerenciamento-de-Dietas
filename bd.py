@@ -1,16 +1,16 @@
 import mysql.connector
 
 estrutura = """
-dim_usuario =  ID, nome, cpf, peso, altura, tipo (nutrólogo ou paciente)
+dim_usuario =  ID, nome, cpf, peso, altura, idade, genero, atividade_fisica, tipo
 fato_tipo =  ID, tipo
+fato_sexo = ID, genero
+fato_atividadefisica = ID, atividade_fisica
 
 dim_dieta = ID, cpf_paciente, nome, calorias_diarias, 
 
-dim_alimento = ID, nome, caloria, proteina, carboidrato, gordura,
+dim_alimento = ID, nome, caloria, proteina, carboidrato, gordura
 
 dim_refeicao = ID, nome, horario, id_dieta
-
-dim_refeicaoalimento = id_refeicao, id_alimento, quantidade
 """
 
 conexao = mysql.connector.connect(

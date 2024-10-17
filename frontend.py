@@ -130,6 +130,7 @@ class Nutricionisa(Tk):
         self.button_alimentos.config(bg="white")
         self.button_planejamentoderefeicoes.config(bg="white")
         self.button_gerenciamentodedietas.config(bg="#00BFFF")
+        self.button_cadastrarpaciente.config(bg="white")
 
         self.button_start = Button(self, text="🏠", command=self.start, bg="white").place(x=200, y=0)
 
@@ -213,6 +214,7 @@ class Nutricionisa(Tk):
         self.button_alimentos.config(bg="#00BFFF")
         self.button_planejamentoderefeicoes.config(bg="white")
         self.button_gerenciamentodedietas.config(bg="white")
+        self.button_cadastrarpaciente.config(bg="white")
 
         Label(self, text="CADASTRO DE ALIMENTOS", font=("Arial", 14, "bold")).place(x=550, y=30)
         Label(self, text="MEDIDA PADRÃO: 100g", font=("Arial", 8, "bold")).place(x=250, y=667)
@@ -295,6 +297,7 @@ class Nutricionisa(Tk):
         self.button_alimentos.config(bg="white")
         self.button_planejamentoderefeicoes.config(bg="#00BFFF")
         self.button_gerenciamentodedietas.config(bg="white")
+        self.button_cadastrarpaciente.config(bg="white")
 
         Label(self, text="PLANEJAMENTO DE REFEIÇÕES", font=("Arial", 14, "bold")).place(x=550, y=30)
 
@@ -394,6 +397,10 @@ class Nutricionisa(Tk):
 
     def cadastrar_paciente(self):
         self.clear()
+        self.button_alimentos.config(bg="white")
+        self.button_planejamentoderefeicoes.config(bg="white")
+        self.button_gerenciamentodedietas.config(bg="white")
+        self.button_cadastrarpaciente.config(bg="#00BFFF")
         
         Label(self, text="CADASTRO DE PACIENTES", font=("Arial", 14, "bold")).place(x=550, y=30)
 
@@ -504,5 +511,5 @@ class Paciente(Tk):
         info_treeview_paciente(self, self.tree_paciente)
 
 if __name__ == "__main__":
-    app = Nutricionisa()
+    app = Login()
     app.mainloop()

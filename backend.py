@@ -1,88 +1,94 @@
-from bd import *
-from  tkinter import *
-from tkinter.messagebox import *
-from frontend import *
+# Importando módulos necessários
+from bd import *  # Importa funções para manipulação de banco de dados
+from tkinter import *  # Importa módulos do Tkinter para GUI
+from tkinter.messagebox import *  # Importa funções de mensagem para mostrar erros e informações
+from frontend import *  # Importa componentes da interface gráfica do usuário
 
-##NUTRICIONISTA
+# Função para popular uma Treeview com dados de um banco de dados
 def info_treeview(tree, tabela, coluna, valor):
+    # Abre o banco de dados e obtém todos os dados correspondentes
     resultado = abrir_bd_fetchall("*", tabela, coluna, valor)
-    colunas = tree["columns"]
+    colunas = tree["columns"]  # Obtém as colunas da Treeview
 
+    # Insere cada resultado na Treeview
     for i in resultado:
-    
-        valores = i[:len(colunas)]
-        tree.insert("", "end", values=valores)
+        valores = i[:len(colunas)]  # Obtém os valores a serem inseridos
+        tree.insert("", "end", values=valores)  # Insere os valores na Treeview
 
+# Função para remover um item selecionado da Treeview e do banco de dados
 def remover_item(tree, tabela, coluna, index_info):
-    selected_item = tree.selection()
-    
+    selected_item = tree.selection()  # Obtém o item selecionado
+
+    # Verifica se um item foi selecionado
     if not selected_item:
         showerror("ERRO", "Selecione um produto para usar esta função")
-    
     else:
+        # Pergunta ao usuário se ele realmente deseja remover o item
         yesno = askyesno("Confirmação", "Voce realmente deseja remover este(s) item?")
-    
         if yesno:
             for i in selected_item:
-                valor = tree.item(i, "values")[index_info]
-                
-                delete_bd(tabela, coluna, valor) 
-                tree.delete(i)
+                valor = tree.item(i, "values")[index_info]  # Obtém o valor do item selecionado
+                delete_bd(tabela, coluna, valor)  # Remove o item do banco de dados
+                tree.delete(i)  # Remove o item da Treeview
 
+# Função para editar um item selecionado na Treeview
 def editar_item(self, tree, button, lista_de_entry, inicio):
-    self.selected_item = tree.selection()
+    self.selected_item = tree.selection()  # Obtém o item selecionado
 
+    # Verifica se um item foi selecionado
     if not self.selected_item:
         showerror("ERRO", "Selecione um produto para usar esta função")
-    
     elif len(self.selected_item) > 1:
         showerror("ERRO", "Não é possivel editar mais de um item de uma vez")
-    
     else:
-        button.config(text="Finalizar Edição")
-        info = []
+        button.config(text="Finalizar Edição")  # Altera o texto do botão
+        info = []  # Lista para armazenar as informações do item
 
-        colunas = tree["columns"]
+        colunas = tree["columns"]  # Obtém as colunas da Treeview
+        # Coleta as informações do item selecionado
         for i in range(inicio, len(colunas)):
             infos = tree.item(self.selected_item, "values")[i]
             info.append(infos)
-        
+
+        # Preenche as entradas com as informações do item selecionado
         for entry, new_info in zip(lista_de_entry, info):
-                        
-            entry.delete(0, END)
-            entry.insert(0, new_info)
-            entry.configure(fg="black")
+            entry.delete(0, END)  # Limpa a entrada
+            entry.insert(0, new_info)  # Insere o novo valor
+            entry.configure(fg="black")  # Altera a cor do texto para preto
 
+# Função para pesquisar itens na Treeview
 def pesquisar_item(self, tree, lista_de_tuplas, tabela, columns, banco):
-    valor = self.combobox_pesquisa.get()
-    pesquisar_valor = f"{self.entry_pesquisa.get()}%"
+    valor = self.combobox_pesquisa.get()  # Obtém o valor da combobox
+    pesquisar_valor = f"{self.entry_pesquisa.get()}%"  # Obtém o valor da entrada de pesquisa com coringa
 
+    # Realiza a pesquisa dependendo do valor selecionado na combobox
     if valor == "Filtro" or valor == "Todos":
         resultado = pesquisar_tudo(tabela, columns, pesquisar_valor)
     for valor_pesquisa, coluna_bd in lista_de_tuplas:
         if valor == valor_pesquisa:
             resultado = like_bd(banco, coluna_bd, pesquisar_valor)
-    
+
+    # Limpa a Treeview antes de inserir novos resultados
     for item in tree.get_children():
         tree.delete(item)
-    
-    colunas = tree["columns"]
 
+    colunas = tree["columns"]  # Obtém as colunas da Treeview
+
+    # Insere os resultados da pesquisa na Treeview
     for i in resultado:
-    
         valores = i[:len(colunas)]
         tree.insert("", "end", values=valores)
 
+# Função para pesquisar itens usando JOIN no banco de dados
 def pesquisar_item_join(self):
-    valor = self.combobox_pesquisa.get()
-    pesquisar_valor = f"{self.entry_pesquisa.get()}%"
+    valor = self.combobox_pesquisa.get()  # Obtém o valor da combobox
+    pesquisar_valor = f"{self.entry_pesquisa.get()}%"  # Obtém o valor da entrada de pesquisa com coringa
 
+    # Realiza a pesquisa dependendo do valor selecionado na combobox
     if valor == "Alimento":
         resultado = pesquisar_join_bd("dim_refeicao", "dim_alimento", "alimento", "id_alimento", "nome", pesquisar_valor)
-    
     elif valor == "Dieta":
         resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "nome", pesquisar_valor)
-
     elif valor == "Filtro" or valor == "Todos":
         cursor.execute(""" SELECT * FROM dim_refeicao
                                 JOIN dim_alimento ON dim_refeicao.alimento = dim_alimento.id_alimento
@@ -94,44 +100,49 @@ def pesquisar_item_join(self):
                                 """, 
         (pesquisar_valor, pesquisar_valor, pesquisar_valor, pesquisar_valor))
 
-        resultado = cursor.fetchall()
-    
+        resultado = cursor.fetchall()  # Obtém todos os resultados da consulta
+
+    # Limpa a Treeview antes de inserir novos resultados
     for valor_pesquisa, coluna_bd in [("ID", "id_refeicao"),("Horário", "horario"), ("Medida", "medida")]:
         if valor == valor_pesquisa:
             resultado = like_bd("dim_refeicao", coluna_bd, pesquisar_valor)
-    
+
     for item in self.tree_refeicao.get_children():
-        self.tree_refeicao.delete(item)
-    
+        self.tree_refeicao.delete(item)  # Limpa a Treeview
+
+    # Insere os resultados da pesquisa na Treeview
     for i in resultado:
         alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
         dieta = valores_fatos("dim_dieta", "nome", "id_dieta", i[2])
         self.tree_refeicao.insert("", "end", values=(i[0], alimento, dieta, i[3], i[4]))
 
+# Função para cadastrar uma dieta
 def cadastrar_dieta(self):
-    resultado = abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
-        
+    resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpfpaciente.get())  # Verifica se o CPF existe no banco
+
+    # Verifica se todos os campos estão preenchidos
     if any(entry in ["Nome:", "CPF Paciente:", "Refeições:", "Calorias Diárias"] or entry.strip() == "" for entry in [self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()]):
         showerror("ERRO", "Preencha todos os campos para fazer cadastro")
         return
 
+    # Valida o CPF do paciente
     elif not self.entry_cpfpaciente.get().isnumeric():
         showerror("ERRO",  "Insira apenas números no campo 'CPF Paciente'")
         return    
-    
     elif not self.entry_refeicoes.get().isnumeric():
         showerror("ERRO",  "Insira apenas números no campo 'Refeições'")
         return
-
     elif len(self.entry_cpfpaciente.get()) > 11 or len(self.entry_cpfpaciente.get()) < 11:
         showerror("ERRO", "O campo 'CPF Paciente' está incorreto")
         return
-    
-    for i in resultado:
-        if i[8] == 1:
-            showerror("ERRO", "Não existe paciente cadastrado com este CPF")
-            return
+    elif not resultado:
+        showerror("ERRO", "Não existe ninguem cadastrado com este cpf")
+        return
+    if resultado[8] == 1:
+        showerror("ERRO", "Não existe paciente cadastrado com este CPF")
+        return
 
+    # Valida a entrada de calorias diárias
     try:
         calorias = float(self.entry_caloriasdiarias.get())
         if calorias <= 0:
@@ -141,269 +152,12 @@ def cadastrar_dieta(self):
         showerror("ERRO", "Insira apenas números no campo 'Calorias Diárias'")
         return
 
-    if self.button_cadastrar.cget("text") == "Cadastrar":                
+    # Realiza o cadastro ou edição de uma dieta
+    if self.button_cadastrar.cget("text") == "Cadastrar":              
+        resultado = abrir_bd_fetchone("dim_dieta", "cpf_paciente", self.entry_cpfpaciente.get())
+          
         if resultado:
             showerror("ERRO", "Já existe uma dieta com este cpf")
-
         else:    
             inserir_bd("dim_dieta", ["nome", "cpf_paciente", "refeicoes", "calorias_diarias"], (self.entry_nome.get(), self.entry_cpfpaciente.get(), self.entry_refeicoes.get(), self.entry_caloriasdiarias.get()))
-            showinfo("SUCESSO", "Cadastro concluido!")
-
-    elif self.button_cadastrar.cget("text") == "Finalizar Edição":
-        id_dieta = self.tree_dietas.item(self.selected_item, "values")[0]
-    
-        for coluna, valor in [("nome", self.entry_nome.get()), 
-                                ("cpf_paciente", self.entry_cpfpaciente.get()), 
-                                ("refeicoes", self.entry_refeicoes.get()), 
-                                ("calorias_diarias", self.entry_caloriasdiarias.get())]:
-                
-            atualizar_bd(coluna, valor, "dieta", id_dieta)
-        conexao.commit()
-        showinfo("SUCESSO", "Edição concluida!")
-        
-    else:
-        showerror("ERRO", "Reinicie o aplicativo")
-
-    for item in self.tree_dietas.get_children():
-        self.tree_dietas.delete(item)
-    
-    info_treeview(self.tree_dietas, "dim_dieta", None, None)
-
-    self.button_cadastrar.config(text="Cadastrar")
-        
-
-def cadastrar_alimento(self):
-    resultado = abrir_bd_fetchone("dim_alimento", "nome", self.entry_nome.get())
-
-    if any(entry in ["Nome:", "Calorias:", "Proteínas:", "Carboidratos:", "Gorduras:"] or entry.strip() == "" for entry in [self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()]):
-        showerror("ERRO", "Preencha todos os campos para fazer cadastro")
-        return
-
-    for i in [self.entry_caloria.get(), self.entry_carboidrato.get(), self.entry_gordura.get(), self.entry_proteina.get()]:
-        try:
-            float(i)
-            if float(i) <=0:
-                showerror("ERRO", "Insira apenas valores acima de 0 nos campos de valores")
-                return
-        
-        except ValueError:
-            showerror("ERRO", "Insira apenas valores numericos nos campos de valores")
-            return
-
-    if self.button_cadastrar.cget("text") == "Cadastrar":
-        
-        if resultado:
-            showerror("ERRO", "Este alimento ja existe no sistema")
-            return
-        
-        inserir_bd("dim_alimento", ["nome", "caloria", "proteina", "carboidrato", "gordura"], (self.entry_nome.get(), self.entry_caloria.get(), self.entry_proteina.get(), self.entry_carboidrato.get(), self.entry_gordura.get()))
-        showinfo("SUCESSO", "Cadastro concluido!")
-
-    elif self.button_cadastrar.cget("text") == "Finalizar Edição":
-        id_alimento = self.tree_alimentos.item(self.selected_item, "values")[0]
-            
-        for coluna, valor in [("nome", self.entry_nome.get()), 
-                                ("caloria", self.entry_caloria.get()), 
-                                ("proteina", self.entry_proteina.get()), 
-                                ("carboidrato", self.entry_carboidrato.get()),
-                                ("gordura", self.entry_gordura.get())]:
-                
-            atualizar_bd(coluna, valor, "alimento", id_alimento)
-        conexao.commit()
-        showinfo("SUCESSO", "Edição concluida!")
-    
-    for item in self.tree_alimentos.get_children():
-        self.tree_alimentos.delete(item)
-
-    info_treeview(self.tree_alimentos, "dim_alimento", None, None)
-
-    self.button_cadastrar.config(text="Cadastrar")
-
-def cadastrar_refeicao(self):
-    id_alimento = valores_fatos("dim_alimento", "id_alimento", "nome", self.combobox_alimento.get())
-    id_dieta = valores_fatos("dim_dieta", "id_dieta", "nome", self.combobox_dieta.get())
-
-    if any(entry in ["Horário:", "Medida:"] or entry.strip() == "" for entry in [self.entry_horario.get(), self.entry_medida.get()]):
-        showerror("ERRO", "Preencha todos os campos para fazer cadastro")
-        return
-
-    elif id_alimento == "None" or id_dieta == "None":
-        showerror("ERRO", "Dieta ou Alimento nao existentes")
-        return
-    
-    if self.button_cadastrar.cget("text") == "Cadastrar":
-        inserir_bd("dim_refeicao", ["alimento", "dieta", "horario", "medida"], (id_alimento, id_dieta, self.entry_horario.get(), self.entry_medida.get()))
-        showinfo("SUCESSO", "Cadastro concluido!")
-
-    elif self.button_cadastrar.cget("text") == "Finalizar Edição":
-        id_refeicao = self.tree_refeicao.item(self.selected_item, "values")[0]
-
-        for coluna, valor in [("alimento", id_alimento),
-                                ("dieta", id_dieta),
-                                ("horario", self.entry_horario.get()),
-                                ("medida", self.entry_medida.get())]:
-            atualizar_bd(coluna, valor, "refeicao", id_refeicao)
-        conexao.commit()
-        showinfo("SUCESSO", "Edição concluida!")
-
-    for item in self.tree_refeicao.get_children():
-        self.tree_refeicao.delete(item)
-    
-    info_treeview_refeicao(self)
-
-    self.button_cadastrar.config(text="Cadastrar")
-
-def info_treeview_refeicao(self):
-    resultado = abrir_bd_fetchall("*", "dim_refeicao", None, None)
-
-    for i in resultado:
-        id_alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
-        id_dieta = valores_fatos("dim_dieta", "nome", "id_dieta", i[2])
-
-        self.tree_refeicao.insert("", "end", values=(i[0], id_alimento, id_dieta, i[3], i[4]))
-
-def editar_combobox_refeicao(self):
-    self.selected_item = self.tree_refeicao.selection()
-
-    if not self.selected_item:
-        showerror("ERRO", "Selecione um produto para usar esta função")
-        return
-    if len(self.selected_item) > 1:
-        return
-
-    alimento = self.tree_refeicao.item(self.selected_item, "values")[1]
-    dieta = self.tree_refeicao.item(self.selected_item, "values")[2]
-    self.combobox_alimento.set(alimento)
-    self.combobox_alimento.config(foreground="black")
-    self.combobox_dieta.set(dieta)
-    self.combobox_dieta.config(foreground="black")
-
-def info_treeview_refeicoesEdietas(self, tree):
-    self.selected_item = self.tree_dietas.selection()
-
-    a = self.tree_dietas.item(self.selected_item, "values")[1]
-
-    resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "nome", a)
-    
-    for i in resultado:
-        alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
-        tree.insert("", "end", values=(alimento, i[3], i[4]))
-
-    for i in resultado:
-        nome_paciente = abrir_bd_fetchall("nome", "dim_usuario", "cpf", i[7])
-        
-        for j in nome_paciente:
-            self.label_paciente.config(text=f"Paciente: {j[1]}")
-
-def cadastro_paciente(self):
-    if self.entry_nome.get().isnumeric():
-        showerror("ERRO", "Não insira números no campo de 'Nome'")
-        return
-    
-    elif len(self.entry_cpf.get()) > 11:
-        showerror("ERRO", "O campo 'CPF' está incorreto")
-        return
-    
-    elif self.var.get() == 0:
-        showerror("ERRO", "Selecione um tipo de usuario")
-        return
-    
-    elif self.combobox_atividadefisica.get() == "Atividade Física":
-        showerror("ERRO", "Selecione o quanto de atividade fisica vc faz")
-    
-    resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpf.get())
-
-    if resultado:
-        showerror("ERRO", "Ja existe um usuario com este cpf")
-        return
-    atividade_fisica = combobox_valor(self)
-    inserir_bd("dim_usuario", ["nome", "cpf", "idade", "altura", "peso", "sexo", "atividade_fisica", "tipo"], [self.entry_nome.get(), self.entry_cpf.get(), self.entry_idade.get(), self.entry_altura.get(), self.entry_peso.get(), self.var.get(), atividade_fisica, 2])
-
-def calculo_caloriasdiarias(self, entry_var, *args):
-    if len(entry_var.get()) == 11:
-        resultado = abrir_bd_fetchall("*", "dim_usuario", "cpf", int(entry_var.get()))
-        for i in resultado:
-            atividade_fisica = abrir_bd_fetchall("atividade_fisica", "fato_atividadefisica", "id_atividadefisica", i[7])
-            if i[6] == 1:
-                cal = 88.36 + (13.4 * i[4]) + (4.8 * (i[3] * 100)) - (5.7 * i[5])
-                imc = i[4] / (i[3] * i[3])
-                for i in [('Sedentário', 1.25), ('Levemente Ativo', 1.375), ('Moderadamente Ativo', 1.55), ('Muito Ativo', 1.725), ('Extremamente Ativo', 1.9)]:
-                    for j in atividade_fisica:
-                        if j[1] == i[0]:
-                            cal = cal * i[1]
-                            if imc < 18.5:
-                                cal += 400
-                            
-                            elif imc > 25:
-                                cal -= 400
-                            
-                            elif imc > 29.9:
-                                cal -= 750
-                            self.entry_caloriasdiarias.delete(0, END)
-                            self.entry_caloriasdiarias.insert(0, cal)
-                            self.entry_caloriasdiarias.config(fg="black")
-            elif i[6] == 2:
-                cal = 447.6 + (9.2 * i[4]) + (3.1 * (i[3] * 100)) - (5.7 * i[5])
-
-def combobox_valor(self):
-    for i in [('Sedentário', 1),('Levemente ativo', 2),('Moderadamente ativo', 3),('Muito ativo', 4),('Extremamente ativo', 5)]:
-        if self.combobox_atividadefisica.get() == i[0]:
-            return i[1]
-
-##LOGIN
-def cadastro_usuario(self):
-    if self.entry_nome.get().isnumeric():
-        showerror("ERRO", "Não insira números no campo de 'Nome'")
-        return
-    
-    elif len(self.entry_cpf.get()) > 11:
-        showerror("ERRO", "O campo 'CPF' está incorreto")
-        return
-    
-    elif self.entry_nome.get().strip() == "" or self.entry_cpf.get().strip() == "":
-        showerror("ERRO", "Preencha todos os campos")
-        return
-    
-    resultado = abrir_bd_fetchone("dim_usuario", "cpf", self.entry_cpf.get())
-    
-    if resultado:
-        showerror("ERRO", "Ja existe um usuario com este cpf")
-        
-    inserir_bd("dim_usuario", ["nome", "cpf", "tipo"], [self.entry_nome.get(), self.entry_cpf.get(), 1])
-    showinfo("SUCESSO", "Cadastro concluido!\nSua senha é seu CPF!")
-
-def fazer_login(tela, entry_usuario, entry_senha, tela_nutri, tela_paciente):
-    resultado = abrir_bd_fetchall("nome, cpf, tipo", "dim_usuario", None, None)
-    for i in resultado:
-        if entry_usuario.get() == i[0] and int(entry_senha.get()) == i[1]:
-            if i[2] == 1:
-                cpf.append(entry_senha.get())
-                tela.destroy()
-                app = tela_nutri()
-                app.mainloop()
-            else:
-                cpf.append(entry_senha.get())
-                tela.destroy()
-                app = tela_paciente()
-                app.mainloop()
-
-def pacientes(self):
-    resultado = abrir_bd_fetchall("*", "dim_usuario", "tipo", 2)
-
-    for i in resultado:
-        sexo = valores_fatos("fato_sexo", "sexo", "id_sexo", i[6])
-        atividade_fisica = valores_fatos("fato_atividadefisica", "atividade_fisica", "id_atividadefisica", i[7])
-
-        self.tree_pacientes.insert("", 0, values=(i[0], i[1], i[2], i[3], i[4], i[5], sexo, atividade_fisica))
-    
-
-##PACIENTE
-def get_cpf(cpf, entry):
-    cpf.append(int(entry.get()))
-
-def info_treeview_paciente(self, tree):
-    resultado = pesquisar_join_bd("dim_refeicao", "dim_dieta", "dieta", "id_dieta", "cpf_paciente", int(cpf[0]))
-    for i in resultado:
-        alimento = valores_fatos("dim_alimento", "nome", "id_alimento", i[1])
-        tree.insert("", "end", values=(alimento, i[3], i[4]))
-        self.label_dieta.config(text=f"Dieta: {i[6]}")
+            showinfo("SUCESSO", "Cadastro concluido!")  # Most
